@@ -14,7 +14,7 @@
 *   Capture real-time VoIP traffic using SIP spoofing techniques.
     
 
-1.  **VoIP Traffic Analysis**:
+2.  **VoIP Traffic Analysis**:
     
 
 *   Capture and process SIP/SDP and RTP packets.
@@ -22,7 +22,7 @@
 *   Decode RTP audio streams using standard codecs.
     
 
-1.  **Audio Extraction**:
+3.  **Audio Extraction**:
     
 
 *   Reconstruct audio from RTP packets and save as .wav files.
@@ -30,7 +30,7 @@
 *   Support for stereo audio channel separation.
     
 
-1.  **Conversation Transcription**:
+4.  **Conversation Transcription**:
     
 
 *   AI-powered speech-to-text transcription using OpenAI Whisper.
@@ -38,7 +38,7 @@
 *   Generate synchronized transcripts with speaker labels.
     
 
-1.  **Caller and Callee Information Extraction**:
+5.  **Caller and Callee Information Extraction**:
     
 
 *   Parse SIP headers to identify caller and callee IDs, IP addresses, and domains.
@@ -46,7 +46,7 @@
 *   Retrieve geographic location (city, state, country) using APIs like ipinfo.io.
     
 
-1.  **Report Generation**:
+6.  **Report Generation**:
     
 
 *   Generate comprehensive reports containing:
@@ -93,21 +93,21 @@ Bash
 
 git clone https://github.com/Jayachandran-J-A/VoIPCrack.gitcd VoIPCrack
 
-1.  Install dependencies:
+2.  Install dependencies:
     
 
 Bash
 
 pip install -r requirements.txt
 
-1.  Ensure tshark is installed:
+3.  Ensure tshark is installed:
     
 
 Bash
 
 sudo apt-get install tshark
 
-1.  Configure ipinfo.io API (optional for geolocation).
+4.  Configure ipinfo.io API (optional for geolocation).
     
 
 **Usage**
