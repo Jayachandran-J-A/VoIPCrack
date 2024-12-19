@@ -91,7 +91,7 @@
 
 Bash
 
-git clone https://github.com/your-username/VoIPCrack.gitcd VoIPCrack
+git clone https://github.com/Jayachandran-J-A/VoIPCrack.gitcd VoIPCrack
 
 1.  Install dependencies:
     
