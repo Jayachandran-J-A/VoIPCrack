@@ -1,0 +1,20 @@
+{
+  "name": "voip-analyzer",
+  "version": "1.0.0",
+  "description": "VoIP Call Interception and Analysis Tool",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "make": "electron-forge make"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "electron-reloader": "^1.2.3",
+    "electron-prebuilt-compile": "34.0.1"
+  },
+  "dependencies": {
+    "child_process": "^1.0.2"
+  }
+}
