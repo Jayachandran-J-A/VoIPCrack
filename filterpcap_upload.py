@@ -4,13 +4,6 @@ from pathlib import Path
 import os
 
 def filter_voip_traffic(input_file, output_file):
-    """
-    Filter VoIP traffic from input pcap/pcapng file and save to a new file.
-    
-    Args:
-        input_file (str): Path to input capture file
-        output_file (str): Path to save filtered capture file
-    """
     # Simple VoIP display filter
     display_filter = "sip or rtp"
     
